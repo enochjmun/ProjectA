@@ -7,8 +7,9 @@ public class PlayerCamera : NetworkBehaviour
     [SerializeField] private float mouseSensitivity = 2f;
     [SerializeField] private float minPitch = -80f;       // how far you can look down
     [SerializeField] private float maxPitch = 80f;        // how far you can look up
-
+    [SerializeField] private GameObject noseObject;
     private float _pitch;
+        
 
     public override void OnNetworkSpawn()
     {
@@ -23,12 +24,7 @@ public class PlayerCamera : NetworkBehaviour
         }
 
         // inside OnNetworkSpawn, after you've established 'owner'
-        if (owner && playerCamera != null)
-        {
-            int hiddenLayer = LayerMask.NameToLayer("OwnerHidden");
-            if (hiddenLayer >= 0)
-                playerCamera.cullingMask &= ~(1 << hiddenLayer);
-        }
+       
         // Non-owners don't run camera logic at all
         enabled = owner;
     }
