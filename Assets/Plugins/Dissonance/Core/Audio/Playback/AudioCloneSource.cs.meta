@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: ca3b82d0ea8da6c45a0abc0cd8a684ca
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 70078
+  packageName: Dissonance Voice Chat
+  packageVersion: 9.0.9
+  assetPath: Assets/Plugins/Dissonance/Core/Audio/Playback/AudioCloneSource.cs
+  uploadId: 907122
