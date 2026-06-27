@@ -151,37 +151,6 @@ namespace CasinoHorrorGame.Networking
             base.OnNetworkDespawn();
         }
 
-        private void Update()
-        {
-            if (!IsOwner)
-                return;
-
-            // Rung 4 stand-in for a real game event (caught by the monster,
-            // benched/respawned, etc.) -- that system doesn't exist yet, so this
-            // key press is a throwaway substitute that exercises the same
-            // mechanism: server flips the NetworkVariable mid-session,
-            // replication fires OnValueChanged, ApplyRole re-points broadcast
-            // and re-syncs the listen-room set. Remove this Update() once a real
-            // event source exists.
-            if (Input.GetKeyDown(KeyCode.R))
-                RequestCycleRoleServerRpc();
-        }
-
-        [ServerRpc]
-        private void RequestCycleRoleServerRpc()
-        {
-            // Monster is reserved for whoever was assigned it at spawn -- there's
-            // no real "monster gets caught/swapped" design yet, so this manual
-            // trigger only toggles Prey <-> Spectator for testing.
-            if (_role.Value == Role.Monster)
-                return;
-
-            var next = _role.Value == Role.Prey ? Role.Spectator : Role.Prey;
-            _role.Value = next;
-
-            Debug.Log($"[VoiceRoomRouter] Server reassigned {OwnerClientId} -> role '{next}' (Rung 4 manual trigger)");
-        }
-
         private void OnRoleChanged(Role previous, Role current)
         {
             ApplyRole(current);
