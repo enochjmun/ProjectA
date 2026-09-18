@@ -1,60 +1,12 @@
-using Netcode.Transports.Facepunch;
-using Unity.Netcode;
 using UnityEngine;
 
+/// <summary>
+/// DEPRECATED / inert. Superseded by TransportSwitcherUI (transport picker + Host/Join + Disconnect).
+/// Its old OnGUI connect UI was removed because it drew in the same top-left corner as TransportSwitcherUI
+/// and overlapped its buttons (ate the Disconnect click). Kept as an EMPTY component only so any existing
+/// scene reference to this script doesn't become a "missing script". Safe to remove this component from its
+/// GameObject in the Editor and delete this file.
+/// </summary>
 public class ConnectTest : MonoBehaviour
 {
-    private FacepunchTransport transport;
-    private string joinIdInput = "";
-
-    void Start()
-    {
-        transport = NetworkManager.Singleton.GetComponent<FacepunchTransport>();
-
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-    }
-
-    void OnClientConnected(ulong clientId)
-    {
-        Debug.Log($"[ConnectTest] Client {clientId} connected. " +
-                   $"Total connected = {NetworkManager.Singleton.ConnectedClientsList.Count}");
-    }
-
-    void OnClientDisconnected(ulong clientId)
-    {
-        Debug.Log($"[ConnectTest] Client {clientId} disconnected.");
-    }
-
-    void OnGUI()
-    {
-        GUILayout.BeginArea(new Rect(10, 10, 300, 200));
-
-        if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
-        {
-            if (GUILayout.Button("Host"))
-            {
-                NetworkManager.Singleton.StartHost();
-                Debug.Log($"[ConnectTest] Hosting. My SteamID = {Steamworks.SteamClient.SteamId}");
-            }
-
-            GUILayout.Label("Join SteamID:");
-            joinIdInput = GUILayout.TextField(joinIdInput);
-
-            if (GUILayout.Button("Join") && ulong.TryParse(joinIdInput, out var targetId))
-            {
-                // NOTE: confirm this field name against your local transport source —
-                // it may be targetSteamId, ConnectToSteamID, or similar depending on version.
-                transport.targetSteamId = targetId;
-                NetworkManager.Singleton.StartClient();
-            }
-        }
-        else
-        {
-            GUILayout.Label(NetworkManager.Singleton.IsHost ? "Hosting" : "Connected as client");
-            GUILayout.Label($"Connected clients: {NetworkManager.Singleton.ConnectedClientsList.Count}");
-        }
-
-        GUILayout.EndArea();
-    }
 }

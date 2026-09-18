@@ -1,18 +1,10 @@
-using Unity.Netcode;
 using UnityEngine;
 
+/// <summary>
+/// DEPRECATED / inert. Superseded by TransportSwitcherUI. Its old Host/Client OnGUI was removed because it
+/// overlapped TransportSwitcherUI in the top-left corner. Kept as an EMPTY component only so any existing
+/// scene reference doesn't become a "missing script". Safe to remove from its GameObject and delete the file.
+/// </summary>
 public class DevConnectUI : MonoBehaviour
 {
-    void OnGUI()
-    {
-        GUILayout.BeginArea(new Rect(10, 10, 200, 100));
-        var nm = NetworkManager.Singleton;
-        if (!nm.IsClient && !nm.IsServer)
-        {
-            if (GUILayout.Button("Host")) nm.StartHost();
-            if (GUILayout.Button("Client")) nm.StartClient();
-        }
-        else GUILayout.Label(nm.IsServer ? "HOST" : "CLIENT");
-        GUILayout.EndArea();
-    }
 }

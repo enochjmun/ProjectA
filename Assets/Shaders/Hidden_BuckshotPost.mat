@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Hidden_BuckshotPost
+  m_Shader: {fileID: 4800000, guid: 7cdd9bf38bcf0dd488e92abd86faaf45, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _ChromAberration: 0.004
+    - _ChromaticAberration: 0.5
+    - _ColorLevels: 12
+    - _Contrast: 0.996
+    - _DepthEdgeThreshold: 0.05
+    - _DepthNormalThreshold: 0.5
+    - _DepthNormalThresholdScale: 7
+    - _DitherDarkFade: 0
+    - _DitherPixelScale: 1
+    - _DitherRows: 720
+    - _DitherStrength: 0.075
+    - _EdgeBrightFade: 1
+    - _EdgeFadeEnd: 20
+    - _EdgeFadeLumHigh: 0.12
+    - _EdgeFadeLumLow: 0.06
+    - _EdgeFadeStart: 8
+    - _EdgeMinLum: 0.037
+    - _EdgeStrength: 0.7
+    - _EdgeThickness: 0.5
+    - _EnableEdges: 1
+    - _EnablePixelate: 1
+    - _EnablePosterize: 1
+    - _Exposure: 0.95
+    - _GrainAmount: 0.005
+    - _GrainScale: 7
+    - _GrainStrength: 0.1
+    - _LumFloor: 0.004
+    - _NormalEdgeThreshold: 0.3
+    - _PixelFactor: 1
+    - _PixelHeight: 480
+    - _PosterizeFadeWidth: 0.01
+    - _PosterizeFloor: 0
+    - _PosterizeSoftness: 0.2
+    - _QuantizeGamma: 2.2
+    - _Saturation: 0.95
+    - _ShadowLift: 1
+    - _SoftnessGradientRef: 0.5
+    - _SplitToneStrength: 0.25
+    - _TintStrength: 0.15
+    - _Vignette: 0
+    - _VignetteAspect: 1.2
+    - _VignetteSoftness: 0.4
+    - _VignetteStrength: 0.6
+    - _WakeBlur: 0
+    m_Colors:
+    - _ColorFilter: {r: 1, g: 1, b: 1, a: 1}
+    - _HighlightTint: {r: 1, g: 0.88, b: 0.72, a: 1}
+    - _ShadowTint: {r: 0.78, g: 0.85, b: 1, a: 1}
+    - _TintColor: {r: 0.95, g: 1.03, b: 0.9, a: 1}
+    - _VignetteColor: {r: 0, g: 0, b: 0, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

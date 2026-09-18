@@ -46,17 +46,15 @@ namespace CasinoHorrorGame.Networking
         {
             Prey = 0,
             Monster = 1,
-            Spectator = 2
+            Lobby = 3,
+            LobbySpectator = 4,
+            BenchedSpectator = 5
         }
 
         private const string PreyRoom = "Prey";
         private const string MonsterRoom = "Monster";
-
-        // Server-side only. First player spawned becomes the Monster (this game
-        // has one monster in the vertical slice -- see GDD); everyone after that
-        // spawns as Prey. Static is safe because only the server process ever
-        // reads/writes it -- clients never enter the IsServer branch below.
-        private static bool _monsterAssigned;
+        private const string LobbyRoom = "Lobby";
+        private const string BenchedSpectatorRoom = "BenchedSpectator";
 
         private readonly NetworkVariable<Role> _role = new NetworkVariable<Role>(
             Role.Prey,
@@ -108,11 +106,12 @@ namespace CasinoHorrorGame.Networking
 
             if (IsServer)
             {
-                var role = _monsterAssigned ? Role.Prey : Role.Monster;
-                _monsterAssigned = true;
-                _role.Value = role;
+                // Everyone starts in the shared Lobby voice room (proximity audio).
+                // Match roles (Monster/Prey) are assigned later by MatchController at
+                // the Lobby -> RoundStart transition via ServerAssignRole below.
+                _role.Value = Role.Lobby;
 
-                Debug.Log($"[VoiceRoomRouter] Server assigned {OwnerClientId} -> role '{role}'");
+                Debug.Log($"[VoiceRoomRouter] Server spawned {OwnerClientId} -> role 'Lobby'");
             }
 
             if (IsOwner)
@@ -156,6 +155,20 @@ namespace CasinoHorrorGame.Networking
             ApplyRole(current);
         }
 
+        /// <summary>
+        /// Server-only: set this player's voice role. MatchController calls this at the
+        /// Lobby -> RoundStart transition to assign Monster/Prey -- the long-noted
+        /// "MatchController drives _role" wiring. Writing _role replicates and the
+        /// owner's OnRoleChanged -> ApplyRole pipeline reacts, same path as before.
+        /// </summary>
+        public void ServerAssignRole(Role role)
+        {
+            if (!IsServer)
+                return;
+
+            _role.Value = role;
+        }
+
         private void ApplyRole(Role role)
         {
             if (_comms == null)
@@ -175,32 +188,69 @@ namespace CasinoHorrorGame.Networking
             if (_broadcast == null)
                 return;
 
+            string room;
             switch (role)
             {
                 case Role.Prey:
-                    _broadcast.enabled = true;
-                    _broadcast.ChannelType = CommTriggerTarget.Room;
-                    _broadcast.RoomName = PreyRoom;
-                    _debugBroadcastRoom = PreyRoom;
+                    room = PreyRoom;
                     break;
 
                 case Role.Monster:
-                    _broadcast.enabled = true;
-                    _broadcast.ChannelType = CommTriggerTarget.Room;
-                    _broadcast.RoomName = MonsterRoom;
-                    _debugBroadcastRoom = MonsterRoom;
+                    room = MonsterRoom;
                     break;
 
-                case Role.Spectator:
-                    // GDD as written only specifies spectators HEAR everything --
-                    // it doesn't say they can talk. Treating spectators as silent
-                    // observers for now; flag to design if benched players should
-                    // actually be able to talk to each other (would just need a
-                    // third room).
-                    _broadcast.enabled = false;
-                    _debugBroadcastRoom = "(none -- silent)";
+                case Role.Lobby:
+                    // Pre-match: everyone talks into the shared Lobby room. Proximity
+                    // falloff comes from Dissonance positional playback, not room cuts.
+                    room = LobbyRoom;
                     break;
+
+                case Role.LobbySpectator:
+                    // A surviving lobby player watching the dungeon still TALKS into the Lobby
+                    // room (proximity), exactly like a normal lobby player. Spectating only
+                    // changes what they HEAR (see ApplyListenRooms), not what they broadcast.
+                    room = LobbyRoom;
+                    break;
+
+                case Role.BenchedSpectator:
+                    // Caught/benched players talk into their OWN 2D room. No living role listens
+                    // to it (see ApplyListenRooms), so their chatter never leaks to
+                    // prey/monster/lobby -- but other benched spectators DO hear it, so the dead
+                    // can talk amongst themselves.
+                    room = BenchedSpectatorRoom;
+                    break;
+
+                default:
+                    return;
             }
+
+            // ⚠ FORCE A RE-TARGET BY TOGGLING `enabled` (fixed 2026-07-22).
+            //
+            // Assigning RoomName on a trigger that ALREADY HAS AN OPEN CHANNEL does not reliably
+            // move that channel -- Dissonance keeps transmitting into the OLD room while this
+            // script believes it switched. The listen side (which this class drives directly via
+            // Comms.Rooms) updates correctly, so the two desynchronise.
+            //
+            // Symptom this caused: a player assigned Prey at round start, who then began
+            // spectating, kept broadcasting into PreyRoom. Their listen set correctly became the
+            // spectator set, so they could hear the chase -- and anyone listening to PreyRoom
+            // could still hear THEM. It read as faint because spectator broadcast is positional
+            // and their body was far away in the lobby, which is also why it went unnoticed:
+            // the leak's volume depends on where people happen to be standing.
+            //
+            // Toggling enabled closes the existing channel and opens a fresh one on the new room.
+            _broadcast.enabled = false;
+
+            // Proximity (positional) playback for the LIVING rooms; the Benched room is
+            // NON-positional -- flat, full-volume 2D voice -- so the dead hear each other clearly
+            // no matter where their frozen bodies ended up.
+            _broadcast.BroadcastPosition = role != Role.BenchedSpectator;
+            _broadcast.ChannelType = CommTriggerTarget.Room;
+            _broadcast.RoomName = room;
+
+            _broadcast.enabled = true;
+
+            _debugBroadcastRoom = room;
         }
 
         private void ApplyListenRooms(Role role)
@@ -220,12 +270,36 @@ namespace CasinoHorrorGame.Networking
                 case Role.Monster:
                     // The beacon: monster hears prey voices, prey don't hear back.
                     desired.Add(PreyRoom);
+                    // Co-monsters hear each other (they broadcast into MonsterRoom). Prey never
+                    // listen to MonsterRoom, so this stays one-directional.
+                    desired.Add(MonsterRoom);
                     break;
 
-                case Role.Spectator:
-                    // Hears everything.
+                case Role.Lobby:
+                    // Everyone hears everyone in the lobby (distance-attenuated by
+                    // positional playback).
+                    desired.Add(LobbyRoom);
+                    break;
+
+                case Role.LobbySpectator:
+                    // A surviving lobby watcher hears the whole LIVING game -- lobby (proximity),
+                    // prey and monster -- but NOT the benched 2D room, so the two spectator groups
+                    // don't share a channel.
+                    desired.Add(LobbyRoom);
                     desired.Add(PreyRoom);
                     desired.Add(MonsterRoom);
+                    break;
+
+                case Role.BenchedSpectator:
+                    // Hears EVERYTHING living -- lobby, prey, monster -- plus its own benched room
+                    // so the dead hear each other. There is no separate lobby-spectator channel to
+                    // add (they talk into Lobby, already covered). No living role adds
+                    // BenchedSpectatorRoom, keeping this channel one-way (they hear all; none hear
+                    // them).
+                    desired.Add(LobbyRoom);
+                    desired.Add(PreyRoom);
+                    desired.Add(MonsterRoom);
+                    desired.Add(BenchedSpectatorRoom);
                     break;
             }
 
